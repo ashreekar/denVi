@@ -1,0 +1,16 @@
+{
+  "name": "denvibackend",
+  "version": "1.0.0",
+  "description": "A backend for video streamer denVi",
+  "keywords": [
+    "javaScript",
+    "backend"
+  ],
+  "license": "ISC",
+  "author": "Ashreek A R",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
