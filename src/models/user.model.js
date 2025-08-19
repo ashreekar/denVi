@@ -51,13 +51,13 @@ const UserSchema = new Schema({
 UserSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
         this.password = await bcrypt.hash(this.password, 10);
-    }
+    }// bcryt hashes password on change
 
     next();
 })  // pre hook runs before some task 
 
 UserSchema.methods.isPasswordCorrect = async function (password) {
-    await bcrypt.compare(password, this.password);
+    return await bcrypt.compare(password, this.password);  //returns bool //matched or not
 }
 
 
