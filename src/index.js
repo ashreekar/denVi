@@ -9,18 +9,20 @@ import { app } from "./app.js";
 
 // configure dotenv
 dotenv.config({
-    path:"./env"
+    path: "./env"
 })
 
 connectDb()
-.then(()=>{
-    app.listen(process.env.PORT || 3002, ()=>{
-        console.log(`=> Server is runnig at port :${process.env.PORT || 3002}`);
-    });
-})
-.catch((err)=>{
-    console.log("MONGODB CONNECTION ERROR FROM \"db/index.js\" \n",err);
-})
+    .then(() => {
+        app.listen(process.env.PORT || 3002, () => {
+            console.log(`🌐 Server started on http://localhost:${process.env.PORT}`);
+            console.log(`⚡ Listening on port ${process.env.PORT}...`);
+            console.log("✅ Ready to accept requests!");
+        });
+    })
+    .catch((err) => {
+        console.log("❌ Database connection failed: \"db/index.js\" \n", err);
+    })
 
 
 

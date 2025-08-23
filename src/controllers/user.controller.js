@@ -40,7 +40,13 @@ const registerUser = asyncHandler(async (req, res) => {
     // images handling
     // .files added by multer
     const avaterLocalPath = req.files?.avatar[0]?.path
-    const coverLocalPath = req.files?.coverImage[0]?.path
+    // const coverLocalPath = req.files?.coverImage[0]?.path
+
+    let coverLocalPath;
+
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverLocalPath = req.files.coverImage[0].path
+    }
 
     if (!avaterLocalPath) {
         throw new ApiError(400, "Avtar file is required");
@@ -57,7 +63,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         fullName,
         avatar: avatar.url,
-        coverimage: coverImage?.url || "",
+        coverImage: coverImage?.url || "",
         email,
         password,
         username: username.toLowerCase(),

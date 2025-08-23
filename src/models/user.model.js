@@ -28,7 +28,7 @@ const UserSchema = new Schema({
         type: String,  // cloudinay
         required: true,
     },
-    coverimage: {
+    coverImage: {
         type: String,  // cloudinay
     },
     watchhistory: [
