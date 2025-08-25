@@ -3,14 +3,15 @@ import { ApiError } from "../utils/APIerror.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloundinary.js"
 import { ApiResponse } from "../utils/APIResponse.js"
+import jwt from "jsonwebtoken"
 
 
 const generateAcceasAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
 
-        const accestokenHere = user.generateAcceasToken()
-        const refreshtockenHere = user.generateRefreshToken()
+        const accestokenHere = await user.generateAcceasToken()
+        const refreshtockenHere = await user.generateRefreshToken()
 
         user.refreshtocken = refreshtockenHere;
         await user.save({ validateBeforeSave: false })
@@ -111,10 +112,10 @@ const loginUser = asyncHandler(async (req, res) => {
     // 5) check password from bcrypt
     // 5) send accceas and ref tokn
     // 7) send cookies
-
+    console.log("REQ BODY --->", req.body);
     const { email, username, password } = req.body;
 
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400, "Username or password required");
     }
 
@@ -177,4 +178,46 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser, loginUser, logoutUser };
+const refreshAcceasToken = asyncHandler(async (req, res) => {
+    try {
+        const token = req.cookies?.refreshToken || req.body.refreshToken
+
+        if (!token) {
+            throw new ApiError(400, "Unauthorised request");
+        }
+
+        const decodedInfo = await jwt.verify(token, process.env.REFRESH_TOCKEN_SECRET);
+
+        const user = await User.findById(decodedInfo?._id)
+
+        if (!user) {
+            throw new ApiError(401, "Unauthorised acceas")
+        }
+
+        if (token !== user?.refreshtocken) {
+            throw new ApiError(400, "Refresh token is expired or used");
+        }
+
+        const { accestokenHere, refreshtockenHere } = await generateAcceasAndRefreshToken(user?._id);
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res
+            .status(200)
+            .cookie("accessToken", accestokenHere, options)
+            .cookie("refreshToken", refreshtockenHere, options)
+            .json(
+                new ApiResponse(200, {
+                    user: user.fullName
+                }),
+                "Login sucessfull"
+            )
+    } catch (error) {
+        throw new ApiError(505, "Something went wrong while generating refresh token");
+    }
+})
+
+export { registerUser, loginUser, logoutUser, refreshAcceasToken };
