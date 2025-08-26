@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloundinary.js"
 import { ApiResponse } from "../utils/APIResponse.js"
 import jwt from "jsonwebtoken"
+import { use } from "react";
 
 
 const generateAcceasAndRefreshToken = async (userId) => {
@@ -270,4 +271,64 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, "Account details updated sucessfully"));
 })
 
-export { registerUser, loginUser, logoutUser, refreshAcceasToken, changeCurrentPassword, getCurrentUser };
+const updateAvatar = asyncHandler(async (req, res) => {
+
+    const avaterLocalPath = req.file?.path;
+
+    if (!avaterLocalPath) {
+        throw new ApiError(400, "Avatar file is missing")
+    }
+
+    if (!user) {
+        throw new ApiError(404, "User not found inour database")
+    }
+
+    const avatar = await uploadOnCloudinary(avaterLocalPath)
+
+    if (!avatar) {
+        throw new ApiError(500, "Error while uploading on avatar")
+    }
+
+    const user = User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    return res.status(200).json(new ApiResponse(200, user, "Updated avatar"));
+})
+
+const updateCoverImage = asyncHandler(async (req, res) => {
+
+    const coverLocalPath = req.file?.path;
+
+    if (!coverLocalPath) {
+        throw new ApiError(400, "Avatar file is missing")
+    }
+
+    if (!user) {
+        throw new ApiError(404, "User not found inour database")
+    }
+
+    const cover = await uploadOnCloudinary(coverLocalPath)
+
+    if (!cover) {
+        throw new ApiError(500, "Error while uploading on avatar")
+    }
+
+    const user = User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: {
+                coverImage: cover.url
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    return res.status(200).json(new ApiResponse(200, user, "Updated avatar"));
+})
+
+export { registerUser, loginUser, logoutUser, refreshAcceasToken, changeCurrentPassword, getCurrentUser, updateAccountDetails };
