@@ -23,7 +23,6 @@ const generateAcceasAndRefreshToken = async (userId) => {
     }
 }
 
-
 const registerUser = asyncHandler(async (req, res) => {
     // controller for testing first output for route
     // res.status(200).json({
@@ -220,4 +219,55 @@ const refreshAcceasToken = asyncHandler(async (req, res) => {
     }
 })
 
-export { registerUser, loginUser, logoutUser, refreshAcceasToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user?._id);
+
+    const isPasswordcorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordcorrect) {
+        throw new ApiError(400, "Invalid old password");
+    }
+
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200)
+        .json(new ApiResponse(200, {}, "Password changed sucessfully"));
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id).select("-password -refreshToken");
+
+    if (!user) {
+        throw new ApiError(404, "User doesnot exists");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "OK"))
+})
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullName, email } = req.body;
+
+    if (!fullName || !email) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                fullName: fullName,
+                email: email
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    return res.status(200).json(new ApiResponse(200, user, "Account details updated sucessfully"));
+})
+
+export { registerUser, loginUser, logoutUser, refreshAcceasToken, changeCurrentPassword, getCurrentUser };
