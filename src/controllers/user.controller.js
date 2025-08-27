@@ -1,10 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/APIerror.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloundinary.js"
+import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloundinary.js"
 import { ApiResponse } from "../utils/APIResponse.js"
 import jwt from "jsonwebtoken"
-import { use } from "react";
 
 
 const generateAcceasAndRefreshToken = async (userId) => {
@@ -41,7 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // 8) remove password and refreshtokem field from response
     // 9) check user create response
     // 10) if created return it.
-
+    console.log(req.body)
     const { fullName, email, username, password } = req.body;
 
     if ([fullName, email, username, password].some((field) => field?.trim() === "")) {
@@ -279,17 +278,23 @@ const updateAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Avatar file is missing")
     }
 
-    if (!user) {
+    const userbyAuth = req.user;
+    console.log(userbyAuth)
+
+    if (!userbyAuth) {
         throw new ApiError(404, "User not found inour database")
     }
 
+    await deleteOnCloudinary(userbyAuth.avatar);
+
+    // TODO:delete old image --assignment
     const avatar = await uploadOnCloudinary(avaterLocalPath)
 
     if (!avatar) {
         throw new ApiError(500, "Error while uploading on avatar")
     }
 
-    const user = User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
                 avatar: avatar.url
@@ -319,7 +324,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Error while uploading on avatar")
     }
 
-    const user = User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
                 coverImage: cover.url

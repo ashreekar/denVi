@@ -30,4 +30,30 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 }
 
-export { uploadOnCloudinary };
+const deleteOnCloudinary = async (fileUrl) => {
+    try {
+        if (!fileUrl) return null;
+
+        // remove query params if any
+        const cleanUrl = fileUrl.split("?")[0];
+
+        // take the part after /upload/
+        const parts = cleanUrl.split("/upload/")[1];
+
+        // remove the version number (starts with 'v123...')
+        const withoutVersion = parts.substring(parts.indexOf("/") + 1);
+
+        // strip extension (.jpg, .png, etc.)
+        const publicId = withoutVersion.replace(/\.[^/.]+$/, "");
+
+        const deletedKey = await cloudinary.uploader.destroy(publicId);
+        console.log("✅ File deleted securely 🌐", deletedKey);
+        return deletedKey;
+
+    } catch (err) {
+        console.error("❌ Error deleting file from Cloudinary:", err);
+        return null;
+    }
+};
+
+export { uploadOnCloudinary, deleteOnCloudinary };
