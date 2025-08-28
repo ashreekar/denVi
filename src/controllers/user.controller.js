@@ -336,4 +336,76 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, "Updated avatar"));
 })
 
-export { registerUser, loginUser, logoutUser, refreshAcceasToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateAvatar, updateCoverImage };
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+
+    if (!username?.trim()) {
+        throw new ApiError(400, "Username is missing");
+    }
+
+    // writting aggregation pipeline which takes array of pipelines
+    const channel = await User.aggregate([
+        {
+            // pipeline to match channel username
+            $match: {
+                username: username?.toLowerCase() //for safety
+            }
+        },
+        {
+            //now lookup of channel
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subricribers"
+            }
+        },
+        {//npw lookup for our subrcriptions user
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "Subscriptions"
+            }
+        },
+        {
+            // gives total count of subrcribers and user subscription
+            $addFields: {
+                subscriberscount: {
+                    $size: "$subricribers"
+                },
+                usersubscribed: {
+                    $size: "$Subscriptions"
+                },
+                isSubscribed: {
+                    $condition: { // whether this user is part of subscribers field subscriber
+                        if: { $in: [req.user?._id, "$subricribers.subscriber"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        { // gives selected values like fullName
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscriberscount: 1,
+                isSubscribed: 1,
+                usersubscribed: 1,
+                avatar: 1,
+                cover: 1,
+                email: 1
+            }
+        }
+    ])
+
+    if (!channel?.length) {
+        throw new ApiError(404, "Channel does not exists");
+    }
+
+    return res.status(200)
+        .json(new ApiResponse(200, channel[0], "User channel fetched sucessfully"));
+})
+
+export { registerUser, loginUser, logoutUser, refreshAcceasToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateAvatar, updateCoverImage, getUserChannelProfile };
